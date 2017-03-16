@@ -26,7 +26,7 @@ int main (int argc, char* argv[]){
     struct node *nodehead;
     int nodecount;
     int *num_in_links, *num_out_links;
-    double *r, *r_pre;
+    double *r, *r_pre, *r_local;
     int i, j;
     double damp_const;
     int iterationcount = 0;
@@ -35,7 +35,15 @@ int main (int argc, char* argv[]){
     double cst_addapted_threshold;
     double error;
     double start, end;
+    int chunksize;
+
+    int rank, numProcs;
+
     FILE *fp;
+
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     // Adjust the threshold according to the problem size
     cst_addapted_threshold = THRESHOLD;
@@ -46,22 +54,31 @@ int main (int argc, char* argv[]){
     
     r = malloc(nodecount * sizeof(double));
     r_pre = malloc(nodecount * sizeof(double));
+    r_local = malloc(nodecount / numProcs * sizeof(double));
+
+    chunksize = nodecount / numProcs;
+
+
     for ( i = 0; i < nodecount; ++i)
         r[i] = 1.0 / nodecount;
     damp_const = (1.0 - DAMPING_FACTOR) / nodecount;
 
     // CORE CALCULATION
     GET_TIME(start);
-    do {
-        ++iterationcount;
+    // do broadcast r here
+    do { 
+        ++iterationcount; 
         vec_cp(r, r_pre, nodecount);
-        for ( i = 0; i < nodecount; ++i){
-            r[i] = 0;
-            for ( j = 0; j < nodehead[i].num_in_links; ++j)
-                r[i] += r_pre[nodehead[i].inlinks[j]] / num_out_links[nodehead[i].inlinks[j]];
-            r[i] *= DAMPING_FACTOR;
-            r[i] += damp_const;
+        // use allgather
+        for ( i = (chunksize * (rank - 1)); i < (rank * chunksize - 1); ++i) {
+            r_local[i] = 0;
+            for ( j = 0; j < nodehead[i].num_in_links; ++j) {
+                r_local[i] += r_pre[nodehead[i].inlinks[j]] / num_out_links[nodehead[i].inlinks[j]];
+            }
+            r_local[i] *= DAMPING_FACTOR;
+            r_local[i] += damp_const;
         }
+        MPI_Allgather(&r_local, nodecount / numProcs, MPI_DOUBLE, &r, nodecount / numProcs, MPI_DOUBLE, MPI_COMM_WORLD);
     } while(rel_error(r, r_pre, nodecount) >= EPSILON);
     GET_TIME(end);
 
