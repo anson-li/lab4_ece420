@@ -70,7 +70,7 @@ int main (int argc, char* argv[]){
         ++iterationcount; 
         vec_cp(r, r_pre, nodecount);
         // use allgather
-        for ( i = (chunksize * (rank - 1)); i < (rank * chunksize - 1); ++i) {
+        for ( i = 0; i < chunksize; ++i) {
             r_local[i] = 0;
             for ( j = 0; j < nodehead[i].num_in_links; ++j) {
                 r_local[i] += r_pre[nodehead[i].inlinks[j]] / num_out_links[nodehead[i].inlinks[j]];
@@ -78,7 +78,7 @@ int main (int argc, char* argv[]){
             r_local[i] *= DAMPING_FACTOR;
             r_local[i] += damp_const;
         }
-        MPI_Allgather(&r_local, nodecount / numProcs, MPI_DOUBLE, &r, nodecount / numProcs, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Allgather(r_local, nodecount / numProcs, MPI_DOUBLE, r, nodecount / numProcs, MPI_DOUBLE, MPI_COMM_WORLD);
     } while(rel_error(r, r_pre, nodecount) >= EPSILON);
     GET_TIME(end);
 
@@ -86,5 +86,7 @@ int main (int argc, char* argv[]){
     Lab4_saveoutput(r, nodecount, end - start);
     node_destroy(nodehead, nodecount);
     free(num_in_links); free(num_out_links);
+    free(r); free(r_local); free(r_pre);
+    MPI_Finalize();
 
 }
