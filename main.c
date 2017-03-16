@@ -15,6 +15,7 @@
 #include <math.h>
 #include "Lab4_IO.h"
 #include "mpi.h"
+#include "timer.h"
 
 #define EPSILON 0.00001
 #define DAMPING_FACTOR 0.85
@@ -33,6 +34,7 @@ int main (int argc, char* argv[]){
     double *collected_r;
     double cst_addapted_threshold;
     double error;
+    double start, end;
     FILE *fp;
 
     // Adjust the threshold according to the problem size
@@ -47,7 +49,9 @@ int main (int argc, char* argv[]){
     for ( i = 0; i < nodecount; ++i)
         r[i] = 1.0 / nodecount;
     damp_const = (1.0 - DAMPING_FACTOR) / nodecount;
+
     // CORE CALCULATION
+    GET_TIME(start);
     do {
         ++iterationcount;
         vec_cp(r, r_pre, nodecount);
@@ -59,11 +63,10 @@ int main (int argc, char* argv[]){
             r[i] += damp_const;
         }
     } while(rel_error(r, r_pre, nodecount) >= EPSILON);
-    //printf("Program converges at %d th iteration.\n", iterationcount);
-
-    Lab4_saveoutput(r, nodecount, 0);
+    GET_TIME(end);
 
     // post processing
+    Lab4_saveoutput(r, nodecount, end - start);
     node_destroy(nodehead, nodecount);
     free(num_in_links); free(num_out_links);
 
