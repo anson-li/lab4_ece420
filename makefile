@@ -18,10 +18,10 @@ datatrim:
 	$(CC) -o datatrim datatrim.c
 
 serialtester:
-	$(CC) -o serialtester serialtester.c Lab4_IO.c
+	$(CC) -o serialtester serialtester.c Lab4_IO.c -lm
 
 main:
-	mpicc -g -Wall -o main main.c LAB4_IO.c 
+	mpicc -g -Wall -o main main.c LAB4_IO.c -lm 
 
 ###
 # Clean process
