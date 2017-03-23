@@ -21,7 +21,7 @@ serialtester:
 	$(CC) -o serialtester serialtester.c Lab4_IO.c -lm
 
 main:
-	mpicc -g -Wall -o main main.c LAB4_IO.c -lm 
+	mpicc -g -Wall -o main main.c Lab4_IO.c -lm 
 
 ###
 # Clean process
