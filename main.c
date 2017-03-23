@@ -63,8 +63,9 @@ int main (int argc, char* argv[]){
     int begin_row = rank * chunksize;
     int end_row = (rank+1) * chunksize;
 
-    for ( i = 0; i < nodecount; ++i)
+    for ( i = 0; i < nodecount; ++i) {
         r[i] = 1.0 / nodecount;
+    }
     damp_const = (1.0 - DAMPING_FACTOR) / nodecount;
 
     // CORE CALCULATION 
@@ -73,12 +74,10 @@ int main (int argc, char* argv[]){
     do { 
         ++iterationcount; 
         vec_cp(r, r_pre, nodecount);
-        // use allgather
-        
-        for ( i = begin_row; i < end_row; ++i) {
+        for (i = 0; i < chunksize; ++i) {
             r_local[i] = 0;
-            for ( j = 0; j < nodehead[i].num_in_links; ++j) {
-                r_local[i] += r_pre[nodehead[i].inlinks[j]] / num_out_links[nodehead[i].inlinks[j]];
+            for (j = 0; j < nodehead[begin_row + i].num_in_links; ++j) {
+                r_local[i] += r_pre[nodehead[begin_row + i].inlinks[j]] / num_out_links[nodehead[begin_row + i].inlinks[j]];
             }
             r_local[i] *= DAMPING_FACTOR;
             r_local[i] += damp_const;
